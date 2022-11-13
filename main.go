@@ -1,29 +1,30 @@
 package main
 
 import (
-	"html/template"
 	"net/http"
+
+	_ "github.com/lib/pq"
+
+	"github.com/pedropaccola/go-webapp-alura/db"
+	"github.com/pedropaccola/go-webapp-alura/products"
 )
 
-var temp = template.Must(template.ParseGlob("templates/*.html"))
-
-type Product struct {
-	Name     string
-	Features string
-	Price    float64
-	Quantity int
+func init() {
+	database := db.ConnectDB()
+	defer database.Close()
+	query := `create table if not exists products (
+		id serial primary key,
+		name varchar,
+		features varchar,
+		price decimal,
+		quantity integer)`
+	_, err := database.Exec(query)
+	if err != nil {
+		panic(err.Error())
+	}
 }
 
 func main() {
-	http.HandleFunc("/", Index)
+	products.HandleRoutes()
 	http.ListenAndServe(":3000", nil)
-}
-
-func Index(w http.ResponseWriter, r *http.Request) {
-	products := []Product{
-		{Name: "Shirt", Features: "Black", Price: 29, Quantity: 10},
-		{Name: "Pants", Features: "Blue", Price: 49, Quantity: 5},
-		{Name: "Jacket", Features: "Denim", Price: 199, Quantity: 2},
-	}
-	temp.ExecuteTemplate(w, "Index", products)
 }
